@@ -17,8 +17,8 @@ To get a list of available options, use `python3 -m xscreenfilter --help`.
 
 Particularly, the `-c` argument alters both brightness and temperature (`c`ombined). You can use it to make the screen
 
- - 'darker and warmer' (`python3 pyrandr-bt.py -c -5`), or
- - 'lighter and cooler (white)' (`python3 pyrandr-bt.py -c +5`).
+ - 'darker and warmer' (`python3 -m xscreenfilter -c -5`), or
+ - 'lighter and cooler (white)' (`python3 -m xscreenfilter -c +5`).
 
 Assign them to some global hotkeys for the best experience.
 
