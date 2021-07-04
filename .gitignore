@@ -1,5 +1,5 @@
 .*
 !.gitignore
 
-/dist
-caph1993_pytools.egg-info/*
+dist/**
+*.egg-info/**
