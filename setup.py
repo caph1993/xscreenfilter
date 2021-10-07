@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='xscreenfilter',
-    version='0.1.4',
+    version='0.1.5',
     description='Python',
     url='https://github.com/caph1993/xscreenfilter',
     author='Carlos Pinzón',

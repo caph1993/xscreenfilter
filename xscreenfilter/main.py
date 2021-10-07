@@ -29,7 +29,7 @@ import sys, json, time
 from .xscreenfilter import xset, xget
 
 # User functions
-VERSION = 'v0.1.4'
+VERSION = 'v0.1.5'
 USAGE = f'xscreenfilter {VERSION}\n' + """
 Arguments:
     d - demo:
