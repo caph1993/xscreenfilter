@@ -1,17 +1,8 @@
 from setuptools import setup
-'''
-sh sumbit.sh
-    rm dist/*
-    python3 setup.py check
-    python3 setup.py sdist
-    twine upload dist/*
-    pip3 install --upgrade xscreenfilter
-    pip3 install --upgrade xscreenfilter
-'''
 
 setup(
     name='xscreenfilter',
-    version='0.1.3',
+    version='0.1.4',
     description='Python',
     url='https://github.com/caph1993/xscreenfilter',
     author='Carlos Pinzón',

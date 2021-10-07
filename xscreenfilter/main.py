@@ -28,10 +28,9 @@ except ImportError:
 import sys, json, time
 from .xscreenfilter import xset, xget
 
-
 # User functions
-VERSION = 'v0.1.3'
-USAGE = f'xscreenfilter {VERSION}\n'+"""
+VERSION = 'v0.1.4'
+USAGE = f'xscreenfilter {VERSION}\n' + """
 Arguments:
     d - demo:
         run a small demo of different combinations
@@ -91,23 +90,23 @@ def run(args):
         assert args, 'No arguments provided'
         args_iter = iter(args)
         for a in args_iter:
-            if a=='--list' or a=='-l':
+            if a == '--list' or a == '-l':
                 l = True
-            elif a=='--demo' or a=='-d':
+            elif a == '--demo' or a == '-d':
                 d = True
-            elif a=='--brightness' or a=='-b':
+            elif a == '--brightness' or a == '-b':
                 b, ib = parse_num(next(args_iter))
-            elif a=='--temperature' or a=='-t':
+            elif a == '--temperature' or a == '-t':
                 t, it = parse_num(next(args_iter))
-            elif a=='--combined' or a =='-c':
+            elif a == '--combined' or a == '-c':
                 b, ib = t, it = parse_num(next(args_iter))
-            elif a=='--restore' or a =='-r':
+            elif a == '--restore' or a == '-r':
                 b = t = 100
-            elif a=='--screen' or a =='-s':
+            elif a == '--screen' or a == '-s':
                 name = next(args_iter)
-            elif a=='--help' or a=='-h':
+            elif a == '--help' or a == '-h':
                 return print(USAGE)
-            elif a=='--version' or a=='-v':
+            elif a == '--version' or a == '-v':
                 return print(VERSION)
             else:
                 raise Exception(f'argument {a} not understood')
@@ -121,34 +120,29 @@ def run(args):
         return
     if d:
         xdemo()
-    if any(x!=None for x in [b,ib,t,it]):
-        xset(
-            abs_brightness=b,
-            abs_temperature=t,
-            delta_brightness=ib,
-            delta_temperature=it,
-            name=name
-        )
+    if any(x != None for x in [b, ib, t, it]):
+        xset(abs_brightness=b, abs_temperature=t, delta_brightness=ib,
+             delta_temperature=it, name=name)
     if l:
         print(json.dumps(xget(), indent='  '))
     return
 
 
 def parse_num(s):
-    sign = int(s.startswith('+'))-int(s.startswith('-'))
+    sign = int(s.startswith('+')) - int(s.startswith('-'))
     value = float(s[abs(sign):])
-    return (value, None) if sign==0 else (None, sign*value)
+    return (value, None) if sign == 0 else (None, sign * value)
 
 
 def xdemo():
     print('Running demo...')
-    for db, dt in [(20,20),(-10,0), (0,-12), (10,0), (0,12)]:
+    for db, dt in [(20, 20), (-10, 0), (0, -12), (10, 0), (0, 12)]:
         for i in range(5):
             start = time.time()
             xset(delta_brightness=db, delta_temperature=dt)
-            time.sleep(max(0, 0.05-(time.time()-start)))
+            time.sleep(max(0, 0.05 - (time.time() - start)))
     return
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

@@ -18,25 +18,61 @@ def get_outputs(disp=None): # based on refs 1 and 2
     return outputs
 
 
-MAX = 65535.0 # grabbed from ref 1
+MAX = 65535.0  # grabbed from ref 1
 
 
-def get_output(disp, crtc):
-    cg = disp.xrandr_get_crtc_gamma(crtc)
+def get_output(d: dpy.Display, crtc):
+    cg = d.xrandr_get_crtc_gamma(crtc)
+    # Ugly fix: after october 2021, cg.blue and cg.green are empty :(
+    # probably a bug in the Xlib library for Python
+    print(cg.red[-10:])
+    print(cg.blue[-10:])
+    print(cg.green[-10:])
+    alt = 1.0
+    alt = raw_red = cg.red[-1] / MAX if cg.red else alt
+    alt = raw_blue = cg.blue[-1] / MAX if cg.blue else alt
+    alt = raw_green = cg.green[-1] / MAX if cg.green else alt
     gamma = (
-        round(cg.red[-1]/MAX, 3),
-        round(cg.green[-1]/MAX, 3),
-        round(cg.blue[-1]/MAX, 3),
+        round(raw_red, 3),
+        round(raw_green, 3),
+        round(raw_blue, 3),
     )
     return dict(crtc=crtc, gamma=gamma)
 
 
-def set_gamma(disp, output, gamma):
+
+def ugly_randr_patch(d):
+    # Ugly fix: after october 2021, the red, blue and green arguments where removed
+    # it is a bug actually, because if they are not provided, the initializer of
+    # SetCrtcGamma will complain
+
+    from Xlib.ext.randr import SetCrtcGamma, extname
+
+    def patched_set_crtc_gamma(self, crtc, size, **kwargs):
+        return SetCrtcGamma(display=self.display,
+                            opcode=self.display.get_extension_major(extname),
+                            crtc=crtc, size=size, **kwargs)
+
+    del d.display_extension_methods['xrandr_set_crtc_gamma']
+    d.extension_add_method('display', 'xrandr_set_crtc_gamma',
+                           patched_set_crtc_gamma)
+    return
+
+
+def set_gamma(d: dpy.Display, output, gamma):
     crtc = output['crtc']
-    n = disp.xrandr_get_crtc_gamma_size(crtc).size
-    data = [[int(MAX*i*v/(n-1)) for i in range(n)] for v in gamma]
-    disp.xrandr_set_crtc_gamma(crtc, n, red=data[0], green=data[1], blue=data[2])
-    output.update(**get_output(disp, crtc))
+    n = d.xrandr_get_crtc_gamma_size(crtc).size
+    data = [[int(MAX * i * v / (n - 1)) for i in range(n)] for v in gamma]
+    rgb = {'red': data[0], 'green': data[1], 'blue': data[2]}
+    try:
+        d.xrandr_set_crtc_gamma(crtc, n, **rgb)
+        use_patch = False
+    except:
+        use_patch = True
+    if use_patch:
+        ugly_randr_patch(d)
+        d.xrandr_set_crtc_gamma(crtc, n, **rgb)
+    output.update(**get_output(d, crtc))
     return
 
 
