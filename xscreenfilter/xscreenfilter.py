@@ -1,43 +1,85 @@
+from typing import List, TypedDict, Dict, Tuple
 from Xlib import display as dpy
 from Xlib.ext import randr
+import json
+from os.path import expanduser
+from .list_monitors import list_monitors
+
+# October 2021 hotfix:
+cache_file = expanduser('~/.cache/xscreenfilter.json')
+
+GammaRGB = Tuple[float, float, float]
+
+
+class DictCG(TypedDict):
+    crtc: int
+    gamma: GammaRGB
+
+
+class DictCGBT(TypedDict):
+    crtc: int
+    gamma: Tuple[float, float, float]
+    brightness: float
+    temperature: float
+
 
 # Randr functions
 
 
-def get_outputs(disp: dpy.Display = None):  # based on refs 1 and 2
+def xlib_monitors(disp: dpy.Display = None):  # based on refs 1 and 2
     disp = disp or dpy.Display()
     screen = disp.get_default_screen()
     info = disp.screen(screen)
     window = info.root
     res = randr.get_screen_resources(window)
-    outputs = {}
+    outputs: List[Tuple[int, str]] = []
     for output in res.outputs:
         params = disp.xrandr_get_output_info(output, res.config_timestamp)
-        if params.crtc:
-            outputs[params.name] = get_output(disp, params.crtc)
+        outputs.append((params.crtc, params.name))
     return outputs
+
+
+def get_outputs(disp: dpy.Display = None):
+    disp = disp or dpy.Display()
+    try:
+        outs = list_monitors()  # Hotfix
+    except:
+        outs = xlib_monitors()
+    return {name: get_output(disp, crtc) for crtc, name in outs}
 
 
 MAX = 65535.0  # grabbed from ref 1
 
 
-def get_output(d: dpy.Display, crtc):
+def get_output(d: dpy.Display, crtc: int):
     cg = d.xrandr_get_crtc_gamma(crtc)
-    # Ugly fix: after october 2021, cg.blue and cg.green are empty :(
-    # probably a bug in the Xlib library for Python
-    alt = 1.0
-    alt = raw_red = cg.red[-1] / MAX if cg.red else alt
-    alt = raw_blue = cg.blue[-1] / MAX if cg.blue else alt
-    alt = raw_green = cg.green[-1] / MAX if cg.green else alt
+    cgd = {
+        'red': cg.red[-1] / MAX if cg.red else -1,
+        'green': cg.green[-1] / MAX if cg.green else -1,
+        'blue': cg.blue[-1] / MAX if cg.blue else -1,
+    }
+    if min(cgd.values()) < 0:
+        # Ugly fix: after october 2021, cg.blue and cg.green are empty :(
+        # probably a bug in the Xlib library for Python
+        keys = ['red', 'green', 'blue']
+        try:
+            with open(cache_file) as f:
+                data = json.load(f)
+            crtc_data = data[str(crtc)]
+            cgd = {k: crtc_data[k] for k in keys}
+        except:
+            alt = max(cgd.values())
+            alt = 1 if alt < 0 else alt
+            cgd = {k: alt for k in keys}
     gamma = (
-        round(raw_red, 3),
-        round(raw_green, 3),
-        round(raw_blue, 3),
+        round(cgd['red'], 3),
+        round(cgd['green'], 3),
+        round(cgd['blue'], 3),
     )
-    return dict(crtc=crtc, gamma=gamma)
+    return DictCG(crtc=crtc, gamma=gamma)
 
 
-def ugly_randr_patch(d: dpy.Display):
+def ugly_randr_patch(disp: dpy.Display):
     # Ugly fix: after october 2021, the red, blue and green arguments where removed
     # it is a bug actually, because if they are not provided, the initializer of
     # SetCrtcGamma will complain
@@ -49,26 +91,41 @@ def ugly_randr_patch(d: dpy.Display):
                             opcode=self.display.get_extension_major(extname),
                             crtc=crtc, size=size, **kwargs)
 
-    del d.display_extension_methods['xrandr_set_crtc_gamma']
-    d.extension_add_method('display', 'xrandr_set_crtc_gamma',
-                           patched_set_crtc_gamma)
+    del disp.display_extension_methods['xrandr_set_crtc_gamma']
+    disp.extension_add_method(
+        'display',
+        'xrandr_set_crtc_gamma',
+        patched_set_crtc_gamma,
+    )
     return
 
 
-def set_gamma(d: dpy.Display, output, gamma):
-    crtc = output['crtc']
-    n = d.xrandr_get_crtc_gamma_size(crtc).size
+def set_gamma(disp: dpy.Display, crtc: int, gamma: GammaRGB):
+    n = disp.xrandr_get_crtc_gamma_size(crtc).size
+    n = max(n, 2)
     data = [[int(MAX * i * v / (n - 1)) for i in range(n)] for v in gamma]
     rgb = {'red': data[0], 'green': data[1], 'blue': data[2]}
     try:
-        d.xrandr_set_crtc_gamma(crtc, n, **rgb)
+        disp.xrandr_set_crtc_gamma(crtc, n, **rgb)
         use_patch = False
     except:
         use_patch = True
     if use_patch:
-        ugly_randr_patch(d)
-        d.xrandr_set_crtc_gamma(crtc, n, **rgb)
-    output.update(**get_output(d, crtc))
+        ugly_randr_patch(disp)
+        disp.xrandr_set_crtc_gamma(crtc, n, **rgb)
+    # Ugly cache fix
+    try:
+        with open(cache_file) as f:
+            data = json.load(f)
+        data[str(crtc)] = gamma
+    except:
+        data = {str(crtc): gamma}
+    try:
+        with open(cache_file, 'w') as f:
+            json.dump(data, f)
+    except:
+        pass
+    get_output(disp, crtc)
     return
 
 
@@ -90,16 +147,16 @@ RGB = [
 ]
 
 
-def params_to_rgb(brightness, temperature):
+def params_to_rgb(brightness: float, temperature: float) -> GammaRGB:
     n = len(RGB)
     i = min(int(temperature * (n - 1)), n - 2)
     disp = temperature * (n - 1) - i
     rgb = [RGB[i][c] * (1 - disp) + RGB[i + 1][c] * disp for c in range(3)]
-    rgb = [round(v * brightness, 3) for v in rgb]
-    return rgb
+    rgb = tuple([round(v * brightness, 3) for v in rgb])
+    return rgb  # type:ignore
 
 
-def rgb_to_params(red, green, blue):
+def rgb_to_params(red: float, green: float, blue: float):
     rgb = [red, green, blue]
     b = max(max(rgb), 1e-5)
     rgb = [v / b for v in rgb]
@@ -141,14 +198,20 @@ def xset(abs_brightness=None, abs_temperature=None, delta_brightness=None,
         t += ifnone(delta_temperature, 0) / 100
         b = max(0, min(1, b))
         t = max(0, min(1, t))
-        set_gamma(disp, out, params_to_rgb(b, t))
+        crtc = out['crtc']
+        set_gamma(disp, crtc, params_to_rgb(b, t))
     return
 
 
 def xget():
     outs = get_outputs()
-    for out in outs.values():
+    outs_cgbt: Dict[str, DictCGBT] = {}
+    for key, out in outs.items():
         b, t = rgb_to_params(*out['gamma'])
-        out['brightness'] = b
-        out['temperature'] = t
-    return outs
+        out_cgbt = DictCGBT(
+            **out,
+            brightness=b,
+            temperature=t,
+        )
+        outs_cgbt[key] = out_cgbt
+    return outs_cgbt

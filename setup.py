@@ -1,8 +1,9 @@
 from setuptools import setup
+from xscreenfilter import VERSION
 
 setup(
     name='xscreenfilter',
-    version='0.1.5',
+    version=VERSION,
     description='Python',
     url='https://github.com/caph1993/xscreenfilter',
     author='Carlos Pinzón',

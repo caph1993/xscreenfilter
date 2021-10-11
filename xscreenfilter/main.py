@@ -29,8 +29,8 @@ import sys, json, time
 from .xscreenfilter import xset, xget
 
 # User functions
-VERSION = 'v0.1.5'
-USAGE = f'xscreenfilter {VERSION}\n' + """
+VERSION = '0.1.6'
+USAGE = f'xscreenfilter v{VERSION}\n' + """
 Arguments:
     d - demo:
         run a small demo of different combinations
