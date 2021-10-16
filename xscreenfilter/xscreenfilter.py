@@ -11,14 +11,16 @@ cache_file = expanduser('~/.cache/xscreenfilter.json')
 GammaRGB = Tuple[float, float, float]
 
 
-class DictCG(TypedDict):
+class DictOutput(TypedDict):
+    name: str
     crtc: int
     gamma: GammaRGB
 
 
-class DictCGBT(TypedDict):
+class DictOutputBT(TypedDict):
+    name: str
     crtc: int
-    gamma: Tuple[float, float, float]
+    gamma: GammaRGB
     brightness: float
     temperature: float
 
@@ -45,19 +47,14 @@ def get_outputs(disp: dpy.Display = None):
         outs = list_monitors()  # Hotfix
     except:
         outs = xlib_monitors()
-    return {name: get_output(disp, crtc) for crtc, name in outs}
+    return {name: get_output(disp, crtc, name) for crtc, name in outs}
 
 
 MAX = 65535.0  # grabbed from ref 1
 
 
-def get_output(d: dpy.Display, crtc: int):
-    cg = d.xrandr_get_crtc_gamma(crtc)
-    cgd = {
-        'red': cg.red[-1] / MAX if cg.red else -1,
-        'green': cg.green[-1] / MAX if cg.green else -1,
-        'blue': cg.blue[-1] / MAX if cg.blue else -1,
-    }
+def get_output(d: dpy.Display, crtc: int, name: str):
+    cgd = _get_output(d, crtc=crtc)
     if min(cgd.values()) < 0:
         # Ugly fix: after october 2021, cg.blue and cg.green are empty :(
         # probably a bug in the Xlib library for Python
@@ -65,7 +62,7 @@ def get_output(d: dpy.Display, crtc: int):
         try:
             with open(cache_file) as f:
                 data = json.load(f)
-            crtc_data = data[str(crtc)]
+            crtc_data = data[name]
             cgd = {k: crtc_data[k] for k in keys}
         except:
             alt = max(cgd.values())
@@ -76,7 +73,17 @@ def get_output(d: dpy.Display, crtc: int):
         round(cgd['green'], 3),
         round(cgd['blue'], 3),
     )
-    return DictCG(crtc=crtc, gamma=gamma)
+    return DictOutput(crtc=crtc, gamma=gamma, name=name)
+
+
+def _get_output(d: dpy.Display, crtc: int):
+    cg = d.xrandr_get_crtc_gamma(crtc)
+    cgd = {
+        'red': cg.red[-1] / MAX if cg.red else -1,
+        'green': cg.green[-1] / MAX if cg.green else -1,
+        'blue': cg.blue[-1] / MAX if cg.blue else -1,
+    }
+    return cgd
 
 
 def ugly_randr_patch(disp: dpy.Display):
@@ -100,7 +107,7 @@ def ugly_randr_patch(disp: dpy.Display):
     return
 
 
-def set_gamma(disp: dpy.Display, crtc: int, gamma: GammaRGB):
+def set_gamma(disp: dpy.Display, crtc: int, gamma: GammaRGB, name: str):
     n = disp.xrandr_get_crtc_gamma_size(crtc).size
     n = max(n, 2)
     data = [[int(MAX * i * v / (n - 1)) for i in range(n)] for v in gamma]
@@ -117,15 +124,15 @@ def set_gamma(disp: dpy.Display, crtc: int, gamma: GammaRGB):
     try:
         with open(cache_file) as f:
             data = json.load(f)
-        data[str(crtc)] = gamma
+        data[name] = gamma
     except:
-        data = {str(crtc): gamma}
+        data = {name: gamma}
     try:
         with open(cache_file, 'w') as f:
             json.dump(data, f)
     except:
         pass
-    get_output(disp, crtc)
+    get_output(disp, crtc, name)
     return
 
 
@@ -199,16 +206,16 @@ def xset(abs_brightness=None, abs_temperature=None, delta_brightness=None,
         b = max(0, min(1, b))
         t = max(0, min(1, t))
         crtc = out['crtc']
-        set_gamma(disp, crtc, params_to_rgb(b, t))
+        set_gamma(disp, crtc, params_to_rgb(b, t), name)
     return
 
 
 def xget():
     outs = get_outputs()
-    outs_cgbt: Dict[str, DictCGBT] = {}
+    outs_cgbt: Dict[str, DictOutputBT] = {}
     for key, out in outs.items():
         b, t = rgb_to_params(*out['gamma'])
-        out_cgbt = DictCGBT(
+        out_cgbt = DictOutputBT(
             **out,
             brightness=b,
             temperature=t,
