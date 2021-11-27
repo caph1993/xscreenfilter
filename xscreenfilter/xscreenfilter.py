@@ -1,4 +1,4 @@
-from typing import List, Optional, TypedDict, Dict, Tuple
+from typing import List, Optional, TypedDict, Dict, Tuple, cast
 from Xlib import display as dpy
 from Xlib.ext import randr
 import json
@@ -47,11 +47,15 @@ class CacheFile:
         try:
             with open(self.filename) as f:
                 data = json.load(f)
-            crtc_data: DictRGB = data[name]
-            cgd: DictRGB = {k: crtc_data[k] for k in keys}  # type: ignore
+            crtc_data: Optional[TupleRGB] = data.get(name, None)
+            if crtc_data:
+                crtc_data = cast(TupleRGB, tuple(map(float, crtc_data)))
         except:
-            # Set red = green = blue = aletrnative
-            cgd: DictRGB = {k: alternative for k in keys}  # type: ignore
+            crtc_data = None
+        if crtc_data != None:
+            cgd = cast(DictRGB, {k: v for k, v in zip(keys, crtc_data)})
+        else:
+            cgd = cast(DictRGB, {k: alternative for k in keys})
             gamma = (cgd['red'], cgd['green'], cgd['blue'])
             self.save(name, gamma)
         return cgd
@@ -118,7 +122,7 @@ def get_outputs():
 
 def get_output(crtc: int, name: str):
     cgd = _get_output(crtc=crtc)
-    values: List[float] = list(cgd.values())  # type: ignore
+    values = cast(List[float], [*cgd.values()])
     if min(values) < 0:
         # Ugly fix: after october 2021, cg.blue and cg.green are empty :(
         # probably a bug in the Xlib library for Python
