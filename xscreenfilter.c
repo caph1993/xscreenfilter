@@ -62,18 +62,18 @@ main(int argc, char **argv)
 		int tempArg = atoi(argv[1]);
 		if(argv[1][0]=='+' || argv[1][0]=='-') temp+=tempArg;
 		else temp = tempArg;
-	}
+	} else temp = 6500;
 
   if (argc > 2){
     double brightnessArg = atof(argv[2]);
 		if(argv[1][0]=='+' || argv[1][0]=='-') brightness+=brightnessArg;
 		else brightness = brightnessArg;
-  }
+  } else brightness = 1.0;
 
-	if (temp < 1000 || temp > 10000)
-		temp = 6500;
-  if (brightness < 0.1 || brightness > 1.0)
-    brightness = 1.0;
+	if (temp < 1000) temp = 1000;
+	if (temp > 6500) temp = 6500;
+  if (brightness < 0.1) brightness = 0.1;
+  if (brightness > 1.0) brightness = 1.0;
 
 	FILE *fpWrite;
 	fpWrite = fopen(filepath, "w");

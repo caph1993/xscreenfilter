@@ -31,12 +31,10 @@ Usage by examples:
  - Run `./xscreenfilter 4500 +0.1` to set temperature to 4500 and increase brightness by 0.1.
  - Run `./xscreenfilter` to set temperature to 6500K and brightness to 1.0 (default values).
 
-Recommended usage:
+**Recommended usage**. Place the file in `~/.local/bin` or `/usr/local/bin`, and add global hotkeys for these two commands:
 
- - 'darker and warmer' (`./xscreenfilter -500 -0.05`), or
- - 'lighter and cooler (white)' (`./xscreenfilter +500 +0.05`).
-
-Assign them to some global hotkeys for the best experience, e.g. ctrl+shift+F3 and ctrl+shift+F4.
+ - `xscreenfilter -350 -0.05` (darker and warmer, better for the eyes)
+ - `xscreenfilter +350 +0.05` (lighter and cooler).
 
 
 ## Motivation of this script
