@@ -3,6 +3,15 @@ This tool has been deprecated in favor of this repository:
 
 https://github.com/mgudemann/sct
 
+Simplified installation:
+
+```
+sudo apt install libxrandr-dev libx11-dev
+curl https://raw.githubusercontent.com/mgudemann/sct/master/sct.c > sctb.c
+gcc -I/usr/local/include -L/usr/local/lib sctb.c -o sctb -lXrandr -lX11
+# Optional (clean)
+sudo apt remove libxrandr-dev libx11-dev
+```
 
 # xscreenfilter
 
