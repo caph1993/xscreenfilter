@@ -1,6 +1,2 @@
 .*
 !.gitignore
-gitignored*
-dist/**
-*.egg-info/**
-__pycache__
