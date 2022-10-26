@@ -1,3 +1,9 @@
+
+This tool has been deprecated in favor of this repository:
+
+https://github.com/mgudemann/sct
+
+
 # xscreenfilter
 
 Protect your eyes. Manage your screen brightness and temperature in **linux**.
