@@ -24,17 +24,18 @@ Tested in Linux Mint 21 on October 2022.
 
 ## How to use?
 
-Usage by examples:
+Place the file in `~/.local/bin` or `/usr/local/bin`, and add global hotkeys for these two commands:
+
+ - `xscreenfilter -350 -0.05` (darker and warmer, better for the eyes)
+ - `xscreenfilter +350 +0.05` (lighter and cooler).
+
+
+**Command line usage**. Usage by examples:
 
  - Run `./xscreenfilter 4500 0.9` to set temperature to 4500K and software brightness to 0.9.
  - Run `./xscreenfilter -1500 +0.0` to decrease current temperature by 1500K and maintain brightness at its current level.
  - Run `./xscreenfilter 4500 +0.1` to set temperature to 4500 and increase brightness by 0.1.
  - Run `./xscreenfilter` to set temperature to 6500K and brightness to 1.0 (default values).
-
-**Recommended usage**. Place the file in `~/.local/bin` or `/usr/local/bin`, and add global hotkeys for these two commands:
-
- - `xscreenfilter -350 -0.05` (darker and warmer, better for the eyes)
- - `xscreenfilter +350 +0.05` (lighter and cooler).
 
 
 ## Motivation of this script

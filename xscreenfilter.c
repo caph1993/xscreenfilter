@@ -1,4 +1,15 @@
-/* public domain, do as you wish */
+/*
+xscreenfilter. A command line tool for setting window birghtness and temperature in linux systems.
+
+Compilation dependencies: sudo apt install libxrandr-dev libx11-dev
+Compilation instructions: gcc -I/usr/local/include -L/usr/local/lib xscreenfilter.c -o xscreenfilter -lXrandr -lX11
+
+Assign to hotkeys for best experience.
+
+Credits to:
+ - https://flak.tedunangst.com/post/sct-set-color-temperature
+ - https://github.com/mgudemann/sct
+*/
 #include <X11/Xlib.h>
 #include <X11/Xproto.h>
 #include <X11/Xatom.h>
@@ -41,7 +52,7 @@ main(int argc, char **argv)
 
 	XRRScreenResources *res = XRRGetScreenResourcesCurrent(dpy, root);
   
-  char *filename = "/.sctb";
+  char *filename = "/.xscreenfilter";
   char *home_dir = getenv("HOME");
   char *filepath = malloc(strlen(home_dir) + strlen(filename) + 1);
   strncpy(filepath, home_dir, strlen(home_dir) + 1);
