@@ -7,6 +7,7 @@ This script lets you apply screen filters that modify your screens' apparent bri
 
 This script does not change the actual hardware brightness, also called backlight. For backlight, I recommend the `brightnessctl` command.
 
+![Small GIF demo](https://raw.githubusercontent.com/caph1993/xscreenfilter/master/demo.gif)
 
 ## Installation
 
