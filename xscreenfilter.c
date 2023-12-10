@@ -6,6 +6,9 @@ Compilation instructions: gcc -I/usr/local/include -L/usr/local/lib xscreenfilte
 
 Assign to hotkeys for best experience.
 
+Author:
+ - Carlos Pinzón, caph1993@gmail.com
+ 
 Credits to:
  - https://flak.tedunangst.com/post/sct-set-color-temperature
  - https://github.com/mgudemann/sct
